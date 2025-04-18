@@ -17,7 +17,8 @@ router.post('/comment/:id', postController.commentOnPost);
 router.post('/comment/:id/reply/:commentId', postController.replyToComment);
 router.post('/share/:id', postController.sharePost);
 
-router.get('/:id', postController.getPost);
+router.get('/:userId', postController.getPostsByUser);
+router.get('/getPost/:id', postController.getPost);
 
 router.patch(
   '/updatePost/:id',
@@ -30,7 +31,9 @@ router.delete(
   postController.deletePost,
 );
 
-router.post('/followUser/:id', postController.followUser);
-router.post('/unfollowUser/:id', authController.restrictTo('Fighter', 'Trainer'), postController.unfollowUser);
+// router.post('/followUser/:id', postController.followUser);
+// router.post('/unfollowUser/:id', authController.restrictTo('Fighter', 'Trainer'), postController.unfollowUser);
+router.post('/:postId/followUserFromPost', postController.followUserFromPost);
+router.post('/:postId/unfollowUserFromPost', authController.restrictTo('Fighter', 'Trainer'), postController.unfollowUserFromPost);
 
 module.exports = router;

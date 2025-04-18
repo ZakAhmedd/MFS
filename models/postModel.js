@@ -52,7 +52,8 @@ const postSchema = new mongoose.Schema(
           userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
           createdAt: { type: Date, default: Date.now },
         },
-      ]
+      ],
+    hashtags: [{ type: String }]
   },
   {
     timestamps: true // Automatically adds createdAt & updatedAt
@@ -62,6 +63,22 @@ const postSchema = new mongoose.Schema(
 postSchema.index({ 'likes.userId': 1 });
 postSchema.index({ 'comments.userId': 1 });
 postSchema.index({ 'comments.replies.userId': 1 });
+postSchema.index({ user: 1 });
+postSchema.index({ hashtags: 1 });
+postSchema.index({ createdAt: -1 });
+postSchema.index({ text: "text" });
+
+postSchema.pre('save', function (next) {
+  if (!this.hashtags) this.hashtags = [];
+
+  const regex = /#\w+/g;
+  const matches = this.text?.match(regex) || [];
+
+  const cleaned = matches.map(tag => tag.toLowerCase().replace(/^#/, '')); // remove #
+  this.hashtags = [...new Set([...this.hashtags, ...cleaned])]; // avoid duplicates
+
+  next();
+});
 
 
 const Post = mongoose.model('Post', postSchema);

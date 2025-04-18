@@ -12,7 +12,15 @@ router.post('/forgotPassword', authController.forgotPassword);
 router.patch('/resetPassword/:token', authController.resetPassword);
 
 router.post('/verifyEmail', authController.verifyEmail)
-router.post('/assignRole', authController.protect, userController.assignRole)
+
+router.use(authController.protect);
+
+router.post('/assignRole', userController.assignRole)
+
+router.post('/followUser/:id', userController.followUser);
+router.post('/unfollowUser/:id', authController.restrictTo('Fighter', 'Trainer'), userController.unfollowUser);
+
+router.get('/search', userController.search)
 
 
 
