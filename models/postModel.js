@@ -60,13 +60,15 @@ const postSchema = new mongoose.Schema(
   }
 );
 
-postSchema.index({ 'likes.userId': 1 });
-postSchema.index({ 'comments.userId': 1 });
-postSchema.index({ 'comments.replies.userId': 1 });
-postSchema.index({ user: 1 });
-postSchema.index({ hashtags: 1 });
-postSchema.index({ createdAt: -1 });
-postSchema.index({ text: "text" });
+postSchema.index({
+  'likes.userId': 1,
+  'comments.userId': 1,
+  'comments.replies.userId': 1,
+  user: 1,
+  hashtags: 1,
+  createdAt: -1,
+  text: "text"
+});
 
 postSchema.pre('save', function (next) {
   if (!this.hashtags) this.hashtags = [];

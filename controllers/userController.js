@@ -1,6 +1,7 @@
 const User = require('./../models/userModel');
 const Post = require('./../models/postModel');
 const catchAsync = require('./../utils/catchAsync');
+const APIFeatures = require('../utils/apiFeatures');
 
 exports.assignRole = catchAsync(async (req, res, next) => {
   const { wantsToFight, wantsToTrain } = req.body;
@@ -122,7 +123,6 @@ exports.search = catchAsync(async (req, res, next) => {
       status: 'success',
       results: {
         posts: posts.length,
-        users: users.length
       },
       data: {
         posts,

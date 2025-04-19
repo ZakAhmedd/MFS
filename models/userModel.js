@@ -46,6 +46,12 @@ const userSchema = new mongoose.Schema({
     verificationCodeExpires: Date,
 })
 
+userSchema.index({
+    username: 'text',
+    firstName: 'text',
+    lastName: 'text'
+  });
+
 userSchema.pre('save', async function(next) {
     // Only run this function if password was actually modified
     if(!this.isModified('password')) return next()
