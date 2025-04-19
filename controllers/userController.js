@@ -83,69 +83,103 @@ exports.search = catchAsync(async (req, res, next) => {
 
   const skip = (page - 1) * limit;
 
-  // === Search Posts ===
-  if (!filter || filter === 'posts' || filter === 'top' || filter === 'latest') {
-    let postQuery = Post.find({
-      $or: [
-        { text: regexQuery },
-        { hashtags: regexQuery }
-      ]
-    });
+  // === Predictive Suggestions ===
+  if (query) {
+    let suggestions = [];
 
-    // Sorting
-    if (filter === 'top') {
-      postQuery = postQuery.sort({ likes: -1 });
-    } else if (filter === 'latest') {
-      postQuery = postQuery.sort({ createdAt: -1 });
-    } else {
-      postQuery = postQuery.sort({ createdAt: -1 }); // fallback for relevance
+    // 1. Predictive Search for Posts
+    if (!filter || filter === 'posts' || filter === 'top' || filter === 'latest') {
+      let postQuery = Post.find({
+        $or: [
+          { text: regexQuery },
+          { hashtags: regexQuery }
+        ]
+      })
+        .sort({ createdAt: -1 })
+        .limit(5); // Limit results for predictive suggestions
+
+      suggestions.push({
+        type: 'posts',
+        results: await postQuery
+      });
     }
 
-    postQuery = postQuery.skip(skip).limit(limit);
-    posts = await postQuery;
+    // 2. Predictive Search for Users
+    if (!filter || filter === 'accounts') {
+      let userQuery = User.find({
+        $or: [
+          { username: regexQuery },
+          { name: regexQuery },
+          { bio: regexQuery }
+        ]
+      })
+        .sort({ createdAt: -1 })
+        .limit(5); // Limit results for predictive suggestions
 
-    // Optional: Composite scoring
-    posts = posts.map(post => {
-      const contentMatch = cleanedQuery && post.content?.toLowerCase().includes(cleanedQuery) ? 1 : 0;
-      const hashtagMatch = post.hashtags?.some(tag => tag.toLowerCase().includes(cleanedQuery)) ? 1 : 0;
-      const compositeScore = (post.likes || 0) * 0.4 + (contentMatch + hashtagMatch) * 0.6;
+      suggestions.push({
+        type: 'users',
+        results: await userQuery
+      });
+    }
 
-      return {
-        ...post.toObject(),
-        compositeScore
-      };
-    }).sort((a, b) => b.compositeScore - a.compositeScore);
+    // 3. Predictive Search for Hashtags
+    if (filter === 'hashtags' || query.includes('#')) {
+      const hashtags = cleanedQuery.split(',').map(tag => tag.trim());
+      const hashtagPosts = await Post.find({
+        hashtags: { $in: hashtags }
+      }).sort({ createdAt: -1 }).limit(5); // Limit results for predictive suggestions
+
+      suggestions.push({
+        type: 'hashtags',
+        results: hashtagPosts
+      });
+    }
+
+    // Return suggestions before hitting the full search
+    return res.status(200).json({
+      status: 'success',
+      data: suggestions
+    });
   }
 
-  // === Search Users ===
-  if (!filter || filter === 'accounts') {
-    const userQuery = User.find({
-      $or: [
-        { username: regexQuery },
-        { name: regexQuery },
-        { bio: regexQuery }
-      ]
-    })
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+  // === Full Search === (only if query is fully typed)
+  let postQuery = Post.find({
+    $or: [
+      { text: regexQuery },
+      { hashtags: regexQuery }
+    ]
+  });
 
-    users = await userQuery;
+  // Sorting options
+  if (filter === 'top') {
+    postQuery = postQuery.sort({ likes: -1 });
+  } else if (filter === 'latest') {
+    postQuery = postQuery.sort({ createdAt: -1 });
+  } else {
+    postQuery = postQuery.sort({ createdAt: -1 }); // Default fallback sorting
   }
 
-  // === Search Hashtags (explicit filter or if user types '#') ===
+  postQuery = postQuery.skip(skip).limit(limit);
+  posts = await postQuery;
+
+  // === Users Search ===
+  let userQuery = User.find({
+    $or: [
+      { username: regexQuery },
+      { name: regexQuery },
+      { bio: regexQuery }
+    ]
+  })
+    .skip(skip)
+    .limit(limit);
+  users = await userQuery;
+
+  // === Hashtags Search ===
   if (filter === 'hashtags' || query.includes('#')) {
     const hashtags = cleanedQuery.split(',').map(tag => tag.trim());
-    const hashtagPosts = await Post.find({
+    posts = await Post.find({
       hashtags: { $in: hashtags }
-    }).sort({ createdAt: -1 }).limit(50);
-
-    // Merge with main posts if not filtered strictly by hashtags
-    if (filter === 'hashtags') {
-      posts = hashtagPosts;
-    } else {
-      posts = [...posts, ...hashtagPosts];
-    }
+    }).sort({ createdAt: -1 }).limit(50); // Show top 50 posts for hashtags
   }
 
   res.status(200).json({
