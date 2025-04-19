@@ -73,60 +73,91 @@ exports.unfollowUser = catchAsync(async (req, res, next) => {
   res.status(200).json({ status: 'success', message: 'Unfollowed user' });
 });
 
-// Search Functionality for Posts, Accounts, and Hashtags
 exports.search = catchAsync(async (req, res, next) => {
-    const { query = '', filter = '', page = 1, limit = 10 } = req.query;
-    const cleanedQuery = query.toLowerCase().replace('#', '').trim();
-  
-    let posts = [];
-    let users = [];
-  
-    // === SEARCH BY FILTER ===
-    if (!filter || filter === 'posts' || filter === 'top' || filter === 'latest') {
-      let postQuery = Post.find({
-        $or: [
-          { text: { $regex: cleanedQuery, $options: 'i' } },
-          { hashtags: { $in: [cleanedQuery] } }
-        ]
-      });
-  
-      const sortBy = filter === 'top' ? '-likes' : '-createdAt';
-  
-      const postFeatures = new APIFeatures(postQuery, req.query)
-        .sort(sortBy)
-        .limitFields()
-        .paginate();
-  
-      posts = await postFeatures.query;
-    }
-  
-    if (!filter || filter === 'accounts') {
-      let userQuery = User.find({
-        $or: [
-          { username: { $regex: cleanedQuery, $options: 'i' } },
-          { firstName: { $regex: cleanedQuery, $options: 'i' } },
-          { lastName: { $regex: cleanedQuery, $options: 'i' } }
-        ]
-      });
-  
-      const userFeatures = new APIFeatures(userQuery, req.query).paginate();
-      users = await userFeatures.query;
-    }
-  
-    if (filter === 'hashtags') {
-        const hashtags = cleanedQuery.split(',').map(tag => tag.trim());
-        posts = await Post.find({ hashtags: { $in: hashtags } }).sort('-createdAt').limit(50);
-      }
-      
-  
-    res.status(200).json({
-      status: 'success',
-      results: {
-        posts: posts.length,
-      },
-      data: {
-        posts,
-        users
-      }
+  const { query = '', filter = '', page = 1, limit = 10 } = req.query;
+  const cleanedQuery = query.toLowerCase().replace('#', '').trim();
+  const regexQuery = new RegExp(cleanedQuery, 'i');
+
+  let posts = [];
+  let users = [];
+
+  const skip = (page - 1) * limit;
+
+  // === Search Posts ===
+  if (!filter || filter === 'posts' || filter === 'top' || filter === 'latest') {
+    let postQuery = Post.find({
+      $or: [
+        { text: regexQuery },
+        { hashtags: regexQuery }
+      ]
     });
+
+    // Sorting
+    if (filter === 'top') {
+      postQuery = postQuery.sort({ likes: -1 });
+    } else if (filter === 'latest') {
+      postQuery = postQuery.sort({ createdAt: -1 });
+    } else {
+      postQuery = postQuery.sort({ createdAt: -1 }); // fallback for relevance
+    }
+
+    postQuery = postQuery.skip(skip).limit(limit);
+    posts = await postQuery;
+
+    // Optional: Composite scoring
+    posts = posts.map(post => {
+      const contentMatch = cleanedQuery && post.content?.toLowerCase().includes(cleanedQuery) ? 1 : 0;
+      const hashtagMatch = post.hashtags?.some(tag => tag.toLowerCase().includes(cleanedQuery)) ? 1 : 0;
+      const compositeScore = (post.likes || 0) * 0.4 + (contentMatch + hashtagMatch) * 0.6;
+
+      return {
+        ...post.toObject(),
+        compositeScore
+      };
+    }).sort((a, b) => b.compositeScore - a.compositeScore);
+  }
+
+  // === Search Users ===
+  if (!filter || filter === 'accounts') {
+    const userQuery = User.find({
+      $or: [
+        { username: regexQuery },
+        { name: regexQuery },
+        { bio: regexQuery }
+      ]
+    })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    users = await userQuery;
+  }
+
+  // === Search Hashtags (explicit filter or if user types '#') ===
+  if (filter === 'hashtags' || query.includes('#')) {
+    const hashtags = cleanedQuery.split(',').map(tag => tag.trim());
+    const hashtagPosts = await Post.find({
+      hashtags: { $in: hashtags }
+    }).sort({ createdAt: -1 }).limit(50);
+
+    // Merge with main posts if not filtered strictly by hashtags
+    if (filter === 'hashtags') {
+      posts = hashtagPosts;
+    } else {
+      posts = [...posts, ...hashtagPosts];
+    }
+  }
+
+  res.status(200).json({
+    status: 'success',
+    results: {
+      posts: posts.length,
+      users: users.length
+    },
+    data: {
+      posts,
+      users
+    }
+  });
 });
+
