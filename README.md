@@ -1,19 +1,12 @@
-# MFS
+# MFS (Backend)
 
-API
+A backend service for a social media type of platform for fighters and members.
 
 ## Prerequisites
 
-- "bcryptjs": "^3.0.2",
-- "crypto": "^1.0.1",
-- "dotenv": "^16.5.0",
-- "express": "^5.1.0",
-- "jsonwebtoken": "^9.0.2",
-- "mongodb": "^6.15.0",
-- "mongoose": "^8.13.2",
-- "nodemailer": "^6.10.1",
-- "nodemon": "^3.1.9",
-- "validator": "^13.15.0"
+Node.js - For the code
+MongoDB - For persona storage
+Postman - To run requests (or any API client)
 
 ## Installation
 
@@ -21,3 +14,15 @@ API
    ```bash
    git clone https://github.com/933zak/MFS.git
    ```
+
+2. To install all required dependencies
+      npm install
+
+
+## Configuration Details
+
+Port: uses the same port defined by PORT in the .env file
+
+## Start the server
+
+npm start
