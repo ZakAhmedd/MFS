@@ -1,7 +1,8 @@
-const Message = require('../models/Message');
+const Message = require('../models/messageModel');
+const catchAsync = require('./../utils/catchAsync');
 
 // Send a message
-exports.sendMessage = async (req, res) => {
+exports.sendMessage = catchAsync(async (req, res) => {
   const { receiverId, content } = req.body;
   const senderId = req.user._id;
 
@@ -12,10 +13,10 @@ exports.sendMessage = async (req, res) => {
   });
 
   res.status(201).json({ status: 'success', data: message });
-};
+});
 
 // Get conversation between two users
-exports.getMessages = async (req, res) => {
+exports.getMessages = catchAsync(async (req, res) => {
   const userId = req.user._id;
   const otherUserId = req.params.userId;
 
@@ -27,10 +28,10 @@ exports.getMessages = async (req, res) => {
   }).sort({ createdAt: 1 }); // chronological
 
   res.status(200).json({ status: 'success', data: messages });
-};
+});
 
 // Mark messages as read
-exports.markAsRead = async (req, res) => {
+exports.markAsRead = catchAsync(async (req, res) => {
   const { senderId } = req.body;
   const receiverId = req.user._id;
 
@@ -40,4 +41,4 @@ exports.markAsRead = async (req, res) => {
   );
 
   res.status(200).json({ status: 'success', message: 'Messages marked as read' });
-};
+});
