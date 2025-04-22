@@ -1,3 +1,5 @@
+const mongoose = require('mongoose');
+
 const fightSchema = new mongoose.Schema({
     title: String,
     description: String,
@@ -5,7 +7,7 @@ const fightSchema = new mongoose.Schema({
     participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   });
 
-  
+
   
   module.exports = mongoose.model('Fight', fightSchema);
   

@@ -257,8 +257,8 @@ exports.getUserProfile = catchAsync(async (req, res) => {
     return res.status(404).json({ message: 'User not found' });
   }
   
-  const posts = await Post.find({ author: userId });
-  const fights = await Fight.find({ user: userId }); 
+  const posts = await Post.find({ user: userId });
+  const fights = await Fight.find({ participants: userId }); 
   
   res.status(200).json({
     user,

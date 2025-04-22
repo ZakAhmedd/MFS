@@ -47,8 +47,7 @@ const userSchema = new mongoose.Schema({
   verificationCode: { type: String },
   verificationCodeExpires: Date,
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
-  fights: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Fight' }],
-
+  //fights: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Fight' }],
 });
 
 userSchema.index({
