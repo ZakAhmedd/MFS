@@ -22,6 +22,7 @@ router.post('/unfollowUser/:id', authController.restrictTo('Fighter', 'Trainer')
 
 router.get('/search', userController.search)
 router.post('/blockUser', userController.blockUser)
+router.post('/unblockUser', userController.unblockUser)
 
 
 
