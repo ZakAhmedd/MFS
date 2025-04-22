@@ -12,6 +12,12 @@ exports.sendMessage = catchAsync(async (req, res) => {
     content,
   });
 
+// Emit to receiver
+global.io.to(receiver).emit('newMessage', {
+    message,
+    from: senderId
+    });
+
   res.status(201).json({ status: 'success', data: message });
 });
 
