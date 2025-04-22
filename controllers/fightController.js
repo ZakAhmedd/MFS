@@ -1,13 +1,15 @@
-const Fight = require('../models/Fight');
+const Fight = require('../models/fightModel');
 const catchAsync = require('./../utils/catchAsync');
 
-exports.getAllFights = catcbAsync(async (req, res) => {
+exports.getAllFights = catchAsync(async (req, res) => {
     const fights = await Fight.find().populate('participants', 'username profilePicture');
     res.status(200).json(fights);
 });
 
 exports.createFight = catchAsync(async (req, res) => {
     const { title, description, date, participants } = req.body;
+
+    const fightDate = new Date(date);
 
     if (!title || !participants || participants.length < 2) {
       return res.status(400).json({ message: 'Title and participants are required' });
@@ -16,7 +18,7 @@ exports.createFight = catchAsync(async (req, res) => {
     const newFight = new Fight({
       title,
       description,
-      date,
+      date: fightDate,
       participants,
     });
 
