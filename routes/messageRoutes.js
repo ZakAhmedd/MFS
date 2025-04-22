@@ -16,5 +16,8 @@ router.patch('/read', messageController.markAsRead);
 
 router.post('/reportMessage', messageController.reportMessage);
 
+router.delete('/:messageId', messageController.deleteMessage);
+router.delete('/conversation/:userId', messageController.deleteConversation);
+
 
 module.exports = router;

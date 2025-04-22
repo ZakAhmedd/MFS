@@ -1,5 +1,6 @@
 const User = require('./../models/userModel');
 const Post = require('./../models/postModel');
+const Fight = require('./../models/fightModel');
 const catchAsync = require('./../utils/catchAsync');
 const APIFeatures = require('../utils/apiFeatures');
 
@@ -246,3 +247,45 @@ exports.unblockUser = catchAsync(async (req, res) => {
 
   res.status(200).json({ message: 'User unblocked successfully.' });
 });
+
+exports.getUserProfile = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+
+  const user = await User.findById(userId);
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  
+  const posts = await Post.find({ author: userId });
+  const fights = await Fight.find({ user: userId }); 
+  
+  res.status(200).json({
+    user,
+    posts,
+    fights,
+  })
+})
+  
+
+exports.updateProfile = async (req, res) => {
+  const userId = req.user._id;
+  const { bio, profilePicture } = req.body;
+
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { bio, profilePicture },
+    { new: true, runValidators: true }
+  );
+
+  if (!updatedUser) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      user: updatedUser
+    }
+  });
+};

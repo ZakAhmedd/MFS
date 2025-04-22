@@ -1,9 +1,8 @@
 const Message = require('../models/messageModel');
 const catchAsync = require('./../utils/catchAsync');
 const User = require('./../models/userModel');
-const { getIo } = require('../socket')
+const { getIO } = require('../socket')
 
-// Send a message
 exports.sendMessage = catchAsync(async (req, res) => {
   const { receiverId, content } = req.body;
   const senderId = req.user._id;
@@ -14,8 +13,8 @@ exports.sendMessage = catchAsync(async (req, res) => {
 
   // Check if either user has blocked the other
   const isBlocked =
-    sender.blockedUsers.includes(receiverId) ||
-    receiver.blockedUsers.includes(senderId);
+  sender?.blockedUsers?.includes(receiverId) ||
+  receiver?.blockedUsers?.includes(senderId);
 
   if (isBlocked) {
     return res.status(403).json({ message: 'Unable to send message as one of the users has the other one blocked.' });
@@ -28,7 +27,7 @@ exports.sendMessage = catchAsync(async (req, res) => {
   });
 
 // Emit to receiver
-global.io.to(receiverId).emit('newMessage', {
+getIO().to(receiverId).emit('newMessage', {
     message,
     from: senderId
     });
@@ -94,7 +93,7 @@ exports.reportMessage = catchAsync(async (req, res, next) => {
 
   await message.save();
 
-  const io = getIo();
+  const io = getIO();
 
   io.to('moderators').emit('reportNotification', {
     messageId: message._id,
@@ -104,4 +103,37 @@ exports.reportMessage = catchAsync(async (req, res, next) => {
   });
 
   res.status(200).json({ status: 'success', message: 'Message reported successfully.' });
+});
+
+
+// Delete a single message (only sender can delete)
+exports.deleteMessage = catchAsync(async (req, res, next) => {
+  const { messageId } = req.params;
+
+  const message = await Message.findById(messageId);
+  if (!message) return res.status(404).json({ message: 'Message not found' });
+
+  if (!message.sender.equals(req.user.id)) {
+    return res.status(403).json({ message: 'You can only delete your own messages' });
+  }
+
+  await Message.findByIdAndDelete(messageId);
+
+  res.status(204).json({ status: 'success', message: 'Message deleted' });
+});
+
+// Delete a conversation (between logged-in user and another user)
+exports.deleteConversation = catchAsync(async (req, res, next) => {
+  const { userId } = req.params;
+  const currentUserId = req.user.id;
+
+  // Deletes messages where current user is sender or receiver in the conversation
+  await Message.deleteMany({
+    $or: [
+      { sender: currentUserId, receiver: userId },
+      { sender: userId, receiver: currentUserId }
+    ]
+  });
+
+  res.status(204).json({ status: 'success', message: 'Conversation deleted' });
 });

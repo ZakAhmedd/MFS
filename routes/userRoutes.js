@@ -24,6 +24,9 @@ router.get('/search', userController.search)
 router.post('/blockUser', userController.blockUser)
 router.post('/unblockUser', userController.unblockUser)
 
+router.get('/profile/:userId', userController.getUserProfile);
+router.patch('/profile', userController.updateProfile);
+
 
 
 
