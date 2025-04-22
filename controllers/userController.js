@@ -195,3 +195,60 @@ exports.search = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.blockUser = catchAsync(async (req, res) => {
+  const { blockedUserId } = req.body;
+
+  if (!blockedUserId) {
+    return res.status(400).json({ message: 'Blocked user ID is required.' });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);  // Get the logged-in user
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Check if the user has already blocked the other user
+    if (user.blockedUsers.includes(blockedUserId)) {
+      return res.status(400).json({ message: 'User is already blocked.' });
+    }
+
+    // Add the blocked user to the blockedUsers array
+    user.blockedUsers.push(blockedUserId);
+    await user.save();
+
+    res.status(201).json({ message: 'User blocked successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error blocking user.', error });
+  }
+});
+
+exports.unblockUser = catchAsync(async (req, res) => {
+  const { blockedUserId } = req.body;
+
+  if (!blockedUserId) {
+    return res.status(400).json({ message: 'Blocked user ID is required.' });
+  }
+
+  try {
+    const user = await User.findById(req.user.id);  // Get the logged-in user
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    // Check if the user has blocked the other user
+    if (!user.blockedUsers.includes(blockedUserId)) {
+      return res.status(400).json({ message: 'User is not blocked.' });
+    }
+
+    // Remove the blocked user from the blockedUsers array
+    user.blockedUsers.pull(blockedUserId);
+    await user.save();
+
+    res.status(200).json({ message: 'User unblocked successfully.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error unblocking user.', error });
+  }
+});

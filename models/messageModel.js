@@ -20,7 +20,9 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// Add compound index for performance on conversations
+// Compound Indexing
 messageSchema.index({ sender: 1, receiver: 1, createdAt: 1 });
+
+messageSchema.index({ content: 'text' });
 
 module.exports = mongoose.model('Message', messageSchema);

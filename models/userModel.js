@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     verificationCode: { type: String },
     verificationCodeExpires: Date,
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 })
 
 userSchema.index({
