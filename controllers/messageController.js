@@ -94,7 +94,7 @@ exports.reportMessage = catchAsync(async (req, res, next) => {
 
   await message.save();
 
-  const io = getIO();
+  const io = getIo();
 
   io.to('moderators').emit('reportNotification', {
     messageId: message._id,

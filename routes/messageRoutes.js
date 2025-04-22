@@ -14,4 +14,7 @@ router.get('/:userId', messageController.getMessages);
 // Mark messages from a sender as read
 router.patch('/read', messageController.markAsRead);
 
+router.post('/reportMessage', messageController.reportMessage);
+
+
 module.exports = router;
