@@ -3,12 +3,12 @@ const catchAsync = require('./../utils/catchAsync');
 
 // Send a message
 exports.sendMessage = catchAsync(async (req, res) => {
-  const { receiverId, content } = req.body;
+  const { receiver, content } = req.body;
   const senderId = req.user._id;
 
   const message = await Message.create({
     sender: senderId,
-    receiver: receiverId,
+    receiver: receiver,
     content,
   });
 
@@ -23,8 +23,8 @@ exports.getMessages = catchAsync(async (req, res) => {
   const messages = await Message.find({
     $or: [
       { sender: userId, receiver: otherUserId },
-      { sender: otherUserId, receiver: userId }
-    ]
+      { sender: otherUserId, receiver: userId },
+    ],
   }).sort({ createdAt: 1 }); // chronological
 
   res.status(200).json({ status: 'success', data: messages });
@@ -32,13 +32,15 @@ exports.getMessages = catchAsync(async (req, res) => {
 
 // Mark messages as read
 exports.markAsRead = catchAsync(async (req, res) => {
-  const { senderId } = req.body;
-  const receiverId = req.user._id;
+  const { sender } = req.body;
+  const receiver = req.user._id;
 
   await Message.updateMany(
-    { sender: senderId, receiver: receiverId, read: false },
-    { $set: { read: true } }
+    { sender: sender, receiver: receiver, read: false },
+    { $set: { read: true } },
   );
 
-  res.status(200).json({ status: 'success', message: 'Messages marked as read' });
+  res
+    .status(200)
+    .json({ status: 'success', message: 'Messages marked as read' });
 });

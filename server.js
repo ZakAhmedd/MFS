@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
+const http = require('http');
+const socketIo = require('socket.io');
+const app = require('./app')
 
 process.on("unhandledException", (err) => {
   console.log("UNCAUGHT EXCEPTION 💥 Shutting down.");
