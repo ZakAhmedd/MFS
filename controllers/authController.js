@@ -57,38 +57,36 @@ exports.signup = catchAsync(async (req, res, next) => {
       message: 'Please check your email for a verification code to activate your account.'
     });
 });
-  
+
   exports.login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
-
-    const checkIfVerified = await User.findOne({ email });
-
-    // Check if the user exists
-    if (!checkIfVerified) {
-      return next(new AppError('No user found with this email address', 404));
-    }
-
-    // 1) Check if user is verified
-    if (checkIfVerified.isVerified === false) {
-      return next(new AppError('You must verify your email before you can login', 401))
-    }
   
-    // 2) Check if email and password exist
+    // Check if the email and password are provided
     if (!email || !password) {
       return next(new AppError('Please provide email and password!', 400));
     }
   
-    // 3) Check if user exists && passowrd is correct
+    // 1) Check if the user exists
     const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return next(new AppError('No user found with this email address', 404));
+    }
   
-    if (!user || !(await user.correctPassword(password, user.password))) {
+    // 2) Check if user is verified
+    if (!user.isVerified) {
+      return next(new AppError('You must verify your email before you can login', 401));
+    }
+  
+    // 3) Check if password is correct
+    const isPasswordCorrect = await user.correctPassword(password, user.password);
+    if (!isPasswordCorrect) {
       return next(new AppError('Incorrect email or password', 401));
     }
-    // 4) If everything ok, send token to client
-    console.log('User Object:', checkIfVerified); 
-    console.log('Is Verified:', checkIfVerified.isVerified);
+  
+    // 4) If everything is ok, send token to client
     createSendToken(user, 200, res);
   });
+  
 
 exports.verifyEmail = catchAsync(async (req, res, next) => {
     const { email, verificationCode } = req.body;
@@ -120,24 +118,6 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
       status: 'success',
       message: 'Email verified successfully!'
     });
-  });
-  
-exports.login = catchAsync(async (req, res, next) => {
-    const { email, password } = req.body;
-  
-    // 1) Check if email and password exist
-    if (!email || !password) {
-      return next(new AppError('Please provide email and password!', 400));
-    }
-  
-    // 2) Check if user exists && passowrd is correct
-    const user = await User.findOne({ email }).select('+password');
-  
-    if (!user || !(await user.correctPassword(password, user.password))) {
-      return next(new AppError('Incorrect email or password. Please try again', 401));
-    }
-    // 3) If everything ok, send token to client
-    createSendToken(user, 200, res);
   });
 
 exports.forgotPassword = catchAsync(async (req, res, next) => {
