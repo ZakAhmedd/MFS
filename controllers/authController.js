@@ -8,7 +8,6 @@ const { promisify } = require('util');
 
 
 
-
 const signToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN,
@@ -59,23 +58,30 @@ exports.signup = catchAsync(async (req, res, next) => {
     });
 });
   
-
-  
   exports.login = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
+
+    const checkIfVerified = await User.findOne({ email });
+
+    // 1) Check if user is verified
+    console.log(checkIfVerified.isVerified)
+    console.log('💥💥')
+    if (checkIfVerified.isVerified === false) {
+      return next(new AppError('You must verify your email before you can login', 401))
+    }
   
-    // 1) Check if email and password exist
+    // 2) Check if email and password exist
     if (!email || !password) {
       return next(new AppError('Please provide email and password!', 400));
     }
   
-    // 2) Check if user exists && passowrd is correct
+    // 3) Check if user exists && passowrd is correct
     const user = await User.findOne({ email }).select('+password');
   
     if (!user || !(await user.correctPassword(password, user.password))) {
       return next(new AppError('Incorrect email or password', 401));
     }
-    // 3) If everything ok, send token to client
+    // 4) If everything ok, send token to client
     createSendToken(user, 200, res);
   });
 
