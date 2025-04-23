@@ -69,8 +69,6 @@ exports.signup = catchAsync(async (req, res, next) => {
     }
 
     // 1) Check if user is verified
-    console.log(checkIfVerified.isVerified)
-    console.log('💥💥')
     if (checkIfVerified.isVerified === false) {
       return next(new AppError('You must verify your email before you can login', 401))
     }
@@ -87,6 +85,8 @@ exports.signup = catchAsync(async (req, res, next) => {
       return next(new AppError('Incorrect email or password', 401));
     }
     // 4) If everything ok, send token to client
+    console.log('User Object:', checkIfVerified); 
+    console.log('Is Verified:', checkIfVerified.isVerified);
     createSendToken(user, 200, res);
   });
 

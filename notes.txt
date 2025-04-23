@@ -2,10 +2,6 @@ unverified cant log in
 
 get all posts
 
-fix likes
-
 see all posts in feed of who i follow
-
-set up node mailer
 
 specify fields in signup
