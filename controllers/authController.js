@@ -63,6 +63,11 @@ exports.signup = catchAsync(async (req, res, next) => {
 
     const checkIfVerified = await User.findOne({ email });
 
+    // Check if the user exists
+    if (!checkIfVerified) {
+      return next(new AppError('No user found with this email address', 404));
+    }
+
     // 1) Check if user is verified
     console.log(checkIfVerified.isVerified)
     console.log('💥💥')
