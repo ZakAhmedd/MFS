@@ -39,13 +39,17 @@ const createSendToken = (user, statusCode, res) => {
   };
 
 exports.signup = catchAsync(async (req, res, next) => {
-    const email = req.body.email
+    const { email, firstName, lastName, username, password } = req.body
   
     const verificationCode = generateVerificationCode();
   
     const newUser = await User.create({
-      ...req.body,
+      email,
+      firstName,
+      lastName,
+      username,
       verificationCode,
+      password,
       verificationCodeExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
       isVerified: false
     });
