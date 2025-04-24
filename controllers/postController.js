@@ -3,6 +3,7 @@ const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 const User = require('./../models/userModel');
 const APIFeatures = require('../utils/apiFeatures');
+const applyQuery = require('../utils/applyQuery');
 
 
 exports.createPost = catchAsync(async (req, res, next) => {
@@ -151,6 +152,19 @@ exports.getPost = catchAsync(async (req, res, next) => {
   });
 });
 
+exports.getAllPosts = catchAsync(async (req, res, next) => {
+  const posts = await applyQuery(req.query);
+
+
+  res.status(200).json({
+    status: 'success',
+    results: posts.length,
+    data: {
+      data: posts
+    }
+  })
+})
+
 exports.getPostsByUser = catchAsync(async (req, res, next) => {
     const userId = req.params.userId;
   
@@ -161,15 +175,8 @@ exports.getPostsByUser = catchAsync(async (req, res, next) => {
   
     // Base query: all posts from this user
     let query = Post.find({ user: userId });
-  
-    const features = new APIFeatures(query, req.query)
-    .hashtagFilter()
-    .search()
-    .sort()
-    .limitFields()
-    .paginate();
 
-    const posts = await features.query;
+    const posts = await applyQuery(req.query);
   
     if (!posts.length) {
       return next(new AppError('No posts found by this user', 404));
@@ -182,6 +189,37 @@ exports.getPostsByUser = catchAsync(async (req, res, next) => {
         data: posts,
       },
     });
+});
+
+exports.getFollowingPosts = catchAsync(async (req, res, next) => {
+  const userId = req.user.id;
+
+  const user = await User.findById(userId);
+  if (!user) {
+    return next(new AppError('User not found', 404));
+  }
+  console.log(user)
+  console.log('💥 Following:', user.following);
+
+   if (!Array.isArray(user.following)) {
+    return next(new AppError('Invalid following list', 400));
+  }
+
+  let query = Post.find({ user: { $in: user.following } });
+
+  const posts = await applyQuery(query, req.query);
+
+  if (!posts.length) {
+    return next(new AppError('No posts found by users that are followed', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    results: posts.length,
+    data: {
+      data: posts,
+    },
+  });
 });
   
 

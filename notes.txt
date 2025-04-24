@@ -1,7 +1,3 @@
-unverified cant log in
-
-get all posts
-
 see all posts in feed of who i follow
 
 specify fields in signup

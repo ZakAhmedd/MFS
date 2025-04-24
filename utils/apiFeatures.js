@@ -45,24 +45,22 @@ class APIFeatures {
       let sortBy = this.queryString.sort;
   
       if (sortBy === 'top') {
-        // sort by number of likes 
         this.query = this.query.sort({ likes: -1 });
       } else if (sortBy === 'latest') {
         this.query = this.query.sort({ createdAt: -1 });
+      } else if (typeof sortBy === 'string') {
+        const sortString = sortBy.split(',').join(' ');
+        this.query = this.query.sort(sortString);
       } else {
-        // fallback to custom sort fields
-        sortBy = sortBy.split(',').join(' ');
-        this.query = this.query.sort(sortBy);
+        this.query = this.query.sort({ createdAt: -1 });
       }
     } else {
-      // Default: newest first
       this.query = this.query.sort({ createdAt: -1 });
     }
   
     return this;
   }
   
-
   limitFields() {
     if (this.queryString.fields) {
       const fields = this.queryString.fields.split(',').join(' ');
