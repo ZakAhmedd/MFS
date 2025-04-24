@@ -153,7 +153,7 @@ exports.getPost = catchAsync(async (req, res, next) => {
 });
 
 exports.getAllPosts = catchAsync(async (req, res, next) => {
-  const posts = await applyQuery(req.query);
+  const posts = await applyQuery(Post.find(), req.query);
 
 
   res.status(200).json({
@@ -176,7 +176,8 @@ exports.getPostsByUser = catchAsync(async (req, res, next) => {
     // Base query: all posts from this user
     let query = Post.find({ user: userId });
 
-    const posts = await applyQuery(req.query);
+    const posts = await applyQuery(query, req.query);
+
   
     if (!posts.length) {
       return next(new AppError('No posts found by this user', 404));
@@ -198,8 +199,6 @@ exports.getFollowingPosts = catchAsync(async (req, res, next) => {
   if (!user) {
     return next(new AppError('User not found', 404));
   }
-  console.log(user)
-  console.log('💥 Following:', user.following);
 
    if (!Array.isArray(user.following)) {
     return next(new AppError('Invalid following list', 400));
